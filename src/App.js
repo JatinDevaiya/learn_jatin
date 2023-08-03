@@ -1,11 +1,13 @@
 import "./App.css";
 import LoginForm from "./loginform/LoginForm";
+import Products from "./react_table/Products";
 
 function App() {
   return (
-    <h1>
-      <LoginForm />
-    </h1>
+    <div>
+      {/* <LoginForm /> */}
+      <Products/>
+    </div>
   );
 }
 
