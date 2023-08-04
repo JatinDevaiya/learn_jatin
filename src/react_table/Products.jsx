@@ -1,17 +1,28 @@
 import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@chakra-ui/icons";
+import {
   Button,
+  Flex,
   Heading,
+  IconButton,
   Image,
   Table,
   Tbody,
   Td,
   Th,
   Thead,
+  Tooltip,
   Tr,
+  Text,
+  Select,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
-import { useSortBy, useTable } from "react-table";
+import { usePagination, useSortBy, useTable } from "react-table";
 
 const tableColumn = [
   {
@@ -21,7 +32,7 @@ const tableColumn = [
   {
     Header: "Image",
     accessor: "image",
-    Cell: ({ row }) => <Image src={row.values.image} height={60} />,
+    Cell: ({ row }) => <Image src={row.values.image} height={50} />,
   },
   {
     Header: "Title",
@@ -44,7 +55,9 @@ const tableColumn = [
     Header: "Action",
     // accessor: "price",
     Cell: ({ row }) => (
-      <Button onClick={() => alert(`$${row.values.price}`)}>Show Price</Button>
+      <Button colorScheme="gray" onClick={() => alert(`$${row.values.price}`)}>
+        Show Price
+      </Button>
     ),
   },
 ];
@@ -52,33 +65,48 @@ const tableColumn = [
 const Products = () => {
   const [product, setProduct] = useState([]);
   const columns = useMemo(() => tableColumn, []);
-  const data = useMemo(() => product, []);
+  const data = useMemo(() => product, [product]);
+
+  const allproduct = () => {
+    axios.get("https://fakestoreapi.com/products").then((res) => {
+      console.log(res, "allproduct");
+      setProduct(res.data);
+    });
+  };
 
   useEffect(() => {
-    const allproduct = () => {
-      axios.get("https://fakestoreapi.com/products").then((res) => {
-        console.log(res, "allproduct");
-        setProduct(res.data);
-      });
-    };
     allproduct();
-  }, [ ]);
+  }, []);
 
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    useTable(
-      {
-        columns: columns,
-        data: data,
-      },
-      useSortBy
-    );
+  const {
+    getTableProps,
+    getTableBodyProps,
+    headerGroups,
+    page,
+    prepareRow,
+    gotoPage,
+    previousPage,
+    nextPage,
+    pageCount,
+    pageOptions,
+    setPageSize,
+    state: { pageIndex, pageSize },
+  } = useTable(
+    {
+      columns: columns,
+      data: data,
+      initialState: { pageIndex: 1 },
+    },
+    useSortBy,
+    usePagination
+  );
 
   return (
     <>
       <center>
         <Heading>React Table</Heading>
       </center>
-      <Table {...getTableProps()}>
+      <Table variant="striped" colorScheme="yellow" {...getTableProps()}>
         <Thead>
           {headerGroups.map((header) => (
             <Tr {...header.getHeaderGroupProps()}>
@@ -92,7 +120,7 @@ const Products = () => {
           ))}
         </Thead>
         <Tbody {...getTableBodyProps()}>
-          {rows.map((row, i) => {
+          {page.map((row, i) => {
             prepareRow(row);
             return (
               <Tr {...row.getRowProps()}>
@@ -104,6 +132,67 @@ const Products = () => {
           })}
         </Tbody>
       </Table>
+
+      <Flex justify="space-between" align="center" m={4}>
+        <Flex gap={4}>
+          <Tooltip label="First Page">
+            <IconButton
+              colorScheme="yellow"
+              onClick={() => gotoPage(0)}
+              icon={<ArrowLeftIcon h={3} w={3} />}
+            />
+          </Tooltip>
+
+          <Tooltip label="Prev Page">
+            <IconButton
+              colorScheme="yellow"
+              onClick={previousPage}
+              icon={<ChevronLeftIcon h={3} w={3} fontSize={"xl"} />}
+            />
+          </Tooltip>
+        </Flex>
+
+        <Flex align="center" gap={2}>
+          Page
+          <Text as="span" fontWeight={"bold"}>
+            {pageIndex + 1}
+          </Text>
+          Of
+          <Text as="span" fontWeight={"bold"}>
+            {pageOptions.length}
+          </Text>
+          <Select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+            }}
+          >
+            {[5, 7, 10, 15, 20].map((pageSize) => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </Select>
+        </Flex>
+
+        <Flex gap={4}>
+          <Tooltip label="Next Page">
+            <IconButton
+              colorScheme="yellow"
+              onClick={nextPage}
+              icon={<ChevronRightIcon h={3} w={3} fontSize={"xl"} />}
+            />
+          </Tooltip>
+
+          <Tooltip label="Last Page">
+            <IconButton
+              colorScheme="yellow"
+              onClick={() => gotoPage(pageCount - 1)}
+              icon={<ArrowRightIcon h={3} w={3} />}
+            />
+          </Tooltip>
+        </Flex>
+      </Flex>
     </>
   );
 };
